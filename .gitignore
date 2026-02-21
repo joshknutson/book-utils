@@ -1,0 +1,6 @@
+books/
+*.temp
+*.fix.epub
+*.original.epub
+__pycache__/
+.env

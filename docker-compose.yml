@@ -1,0 +1,19 @@
+services:
+  book-gap-filler:
+    build: .
+    container_name: book-fixer
+    environment:
+      - DRY_RUN=false
+      - CONVERT_TIME=02:00      # Fills gaps from AZW3/MOBI
+      - VALIDATE_TIME=04:00     # Checks EPUB health and auto-fixes
+      - SKIP_CONVERSION=false
+      - SKIP_VALIDATION=false
+      - TZ=America/Chicago
+    volumes:
+      - /mnt/odin/data/media/books:/books
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '.5'  # Prevent conversion from pinning all Thor's CPU cores
+          memory: 1G
