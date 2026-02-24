@@ -13,11 +13,11 @@ VALIDATE_TIME = os.getenv("VALIDATE_TIME", "04:00")
 
 def auto_fix_epub(file_path):
     print(f"🛠️ Attempting auto-fix on {file_path}...")
-    
+
     # Define paths
     original_backup = str(file_path).replace(".epub", ".original.epub")
     temp_fix = str(file_path).replace(".epub", ".fix.epub")
-    
+
     # 1. Skip if we've already backed up (prevents infinite loops/double processing)
     if os.path.exists(original_backup):
         print(f"⏭️ Skipping: Original backup already exists for {file_path}")
@@ -25,18 +25,18 @@ def auto_fix_epub(file_path):
 
     # 2. Run the conversion with Kindle-optimized profile
     cmd = ['ebook-convert', file_path, temp_fix, '--output-profile', 'kindle']
-    
+
     try:
         subprocess.run(cmd, check=True)
-        
+
         # 3. Rename current file to .original.epub
         os.rename(file_path, original_backup)
-        
+
         # 4. Move the fixed version to the primary .epub name
         os.rename(temp_fix, file_path)
-        
+
         print(f"✅ Auto-fixed and backed up original: {original_backup}")
-        
+
     except Exception as e:
         print(f"❌ Auto-fix failed: {e}")
         if os.path.exists(temp_fix):
@@ -47,9 +47,13 @@ def run_integrity_check():
     print(f"--- Starting Integrity Scan: {time.strftime('%H:%M:%S')} ---")
     for root, _, files in os.walk(LIBRARY_PATH):
         for file in files:
-            if file.lower().endswith(".epub"):
-                path = os.path.join(root, file)
-                result = EpubCheck(path)
+                if file.lower().endswith(".epub"):
+                    # Skip files that are already backups (contain .original)
+                    if ".original" in file.lower():
+                        print(f"⏭️ Skipping: File appears to be an original/backup: {file}")
+                        continue
+                    path = os.path.join(root, file)
+                    result = EpubCheck(path)
                 if not result.valid:
                     print(f"🚩 Broken EPUB found: {file}")
                     if not DRY_RUN:
@@ -78,7 +82,7 @@ def scan_and_convert():
 if __name__ == "__main__":
     schedule.every().day.at(CONVERT_TIME).do(scan_and_convert)
     schedule.every().day.at(VALIDATE_TIME).do(run_integrity_check)
-    
+
     # Run once at startup for immediate feedback
     scan_and_convert()
     run_integrity_check()
