@@ -1,4 +1,4 @@
-import os, subprocess, time, schedule
+import os, subprocess, time, schedule, sys, argparse
 from pathlib import Path
 from epubcheck import EpubCheck
 
@@ -54,10 +54,10 @@ def run_integrity_check():
                         continue
                     path = os.path.join(root, file)
                     result = EpubCheck(path)
-                if not result.valid:
-                    print(f"🚩 Broken EPUB found: {file}")
-                    if not DRY_RUN:
-                        auto_fix_epub(path)
+                    if not result.valid:
+                        print(f"🚩 Broken EPUB found: {file}")
+                        if not DRY_RUN:
+                            auto_fix_epub(path)
 
 def scan_and_convert():
     if SKIP_CONVERSION: return
@@ -80,13 +80,27 @@ def scan_and_convert():
                     break
 
 if __name__ == "__main__":
-    schedule.every().day.at(CONVERT_TIME).do(scan_and_convert)
-    schedule.every().day.at(VALIDATE_TIME).do(run_integrity_check)
+    parser = argparse.ArgumentParser(description="Book-Utils Converter")
+    parser.add_argument("folder", nargs="?", help="Optional specific folder to scan and fix immediately")
+    args = parser.parse_args()
 
-    # Run once at startup for immediate feedback
-    scan_and_convert()
-    run_integrity_check()
+    if args.folder:
+        if os.path.exists(args.folder):
+            LIBRARY_PATH = args.folder
+            print(f"🎯 Running one-time scan on specific folder: {LIBRARY_PATH}")
+            scan_and_convert()
+            run_integrity_check()
+        else:
+            print(f"❌ Error: Folder not found: {args.folder}")
+            sys.exit(1)
+    else:
+        schedule.every().day.at(CONVERT_TIME).do(scan_and_convert)
+        schedule.every().day.at(VALIDATE_TIME).do(run_integrity_check)
 
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
+        # Run once at startup for immediate feedback
+        scan_and_convert()
+        run_integrity_check()
+
+        while True:
+            schedule.run_pending()
+            time.sleep(60)
