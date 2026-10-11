@@ -1,0 +1,140 @@
+name: Ravens Autonomous Dev Suite
+
+on:
+  issues:
+    types: [opened, labeled, assigned]
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  odin-pm:
+    name: Odin PM & Architect
+    if: |
+      github.actor != 'odin-bot' && (
+        (github.event_name == 'pull_request' && (
+          github.event.pull_request.user.login == 'huginn-bot' ||
+          github.event.pull_request.user.login == 'muninn-bot' ||
+          contains(github.event.pull_request.labels.*.name, 'needs-review')
+        )) ||
+        (github.actor != 'huginn-bot' && github.actor != 'muninn-bot' && (
+          (github.event_name == 'issue_comment' && (
+            startsWith(github.event.comment.body, '/spec') ||
+            startsWith(github.event.comment.body, '/plan') ||
+            startsWith(github.event.comment.body, '/dispatch') ||
+            startsWith(github.event.comment.body, '/review') ||
+            contains(github.event.comment.body, '@odin-bot')
+          )) ||
+          (github.event_name == 'issues' && (
+            github.event.issue.assignee.login == 'odin-bot' ||
+            contains(github.event.issue.labels.*.name, 'needs-spec')
+          ))
+        ))
+      )
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout Ravens Suite
+        uses: actions/checkout@v4
+        with:
+          repository: ponder/ravens
+          path: .ravens
+          token: ${{ secrets.ODIN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Odin PM Agent
+        env:
+          FORGEJO_URL: ${{ github.server_url }}
+          FORGEJO_REPOSITORY: ${{ github.repository }}
+          ODIN_BOT_TOKEN: ${{ secrets.ODIN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+          FORGEJO_TOKEN: ${{ secrets.ODIN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+          LITELLM_API_URL: "http://192.168.86.157:4000/v1"
+          LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+          LITELLM_MODEL: "unified-agent"
+          EVENT_NAME: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python .ravens/scripts/pm_agent.py
+
+  huginn-muninn-solver:
+    name: Raven Solver
+    if: |
+      github.actor != 'huginn-bot' &&
+      github.actor != 'muninn-bot' &&
+      github.actor != 'odin-bot' && (
+        (github.event_name == 'issues' && (
+          github.event.issue.assignee.login == 'huginn-bot' ||
+          github.event.issue.assignee.login == 'muninn-bot' ||
+          contains(github.event.issue.labels.*.name, 'huginn') ||
+          contains(github.event.issue.labels.*.name, 'muninn')
+        )) ||
+        (github.event_name == 'issue_comment' && !github.event.issue.pull_request && (
+          startsWith(github.event.comment.body, '/huginn') ||
+          startsWith(github.event.comment.body, '/muninn') ||
+          startsWith(github.event.comment.body, '/solve') ||
+          contains(github.event.comment.body, '@huginn-bot') ||
+          contains(github.event.comment.body, '@muninn-bot')
+        ))
+      )
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout Ravens Suite
+        uses: actions/checkout@v4
+        with:
+          repository: ponder/ravens
+          path: .ravens
+          token: ${{ secrets.HUGINN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Target Repo Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Determine Raven Persona
+        id: persona
+        run: |
+          if [[ "${{ github.event.issue.assignee.login }}" == "muninn-bot" || "${{ contains(github.event.issue.labels.*.name, 'muninn') }}" == "true" || "${{ contains(github.event.comment.body, 'muninn') }}" == "true" ]]; then
+            echo "agent=muninn" >> $GITHUB_OUTPUT
+          else
+            echo "agent=huginn" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Raven Solver
+        env:
+          FORGEJO_URL: ${{ github.server_url }}
+          FORGEJO_REPOSITORY: ${{ github.repository }}
+          HUGINN_BOT_TOKEN: ${{ secrets.HUGINN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+          FORGEJO_TOKEN: ${{ secrets.HUGINN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+          LITELLM_API_URL: "http://192.168.86.157:4000/v1"
+          LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+          LITELLM_MODEL: "unified-agent"
+          EVENT_NAME: ${{ github.event_name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: python .ravens/scripts/raven_solver.py --agent ${{ steps.persona.outputs.agent }}
