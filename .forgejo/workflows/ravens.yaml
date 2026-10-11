@@ -45,7 +45,7 @@ jobs:
         with:
           repository: ponder/ravens
           path: .ravens
-          token: ${{ secrets.ODIN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+          token: ${{ secrets.BOT_TOKEN || secrets.ODIN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -56,8 +56,8 @@ jobs:
         env:
           FORGEJO_URL: ${{ github.server_url }}
           FORGEJO_REPOSITORY: ${{ github.repository }}
-          ODIN_BOT_TOKEN: ${{ secrets.ODIN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
-          FORGEJO_TOKEN: ${{ secrets.ODIN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+          ODIN_BOT_TOKEN: ${{ secrets.BOT_TOKEN || secrets.ODIN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+          FORGEJO_TOKEN: ${{ secrets.BOT_TOKEN || secrets.ODIN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
           LITELLM_API_URL: "http://192.168.86.157:4000/v1"
           LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
           LITELLM_MODEL: "unified-agent"
@@ -102,7 +102,7 @@ jobs:
         with:
           repository: ponder/ravens
           path: .ravens
-          token: ${{ secrets.HUGINN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+          token: ${{ secrets.BOT_TOKEN || secrets.HUGINN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -128,8 +128,8 @@ jobs:
         env:
           FORGEJO_URL: ${{ github.server_url }}
           FORGEJO_REPOSITORY: ${{ github.repository }}
-          HUGINN_BOT_TOKEN: ${{ secrets.HUGINN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
-          FORGEJO_TOKEN: ${{ secrets.HUGINN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+          HUGINN_BOT_TOKEN: ${{ secrets.BOT_TOKEN || secrets.HUGINN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+          FORGEJO_TOKEN: ${{ secrets.BOT_TOKEN || secrets.HUGINN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
           LITELLM_API_URL: "http://192.168.86.157:4000/v1"
           LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
           LITELLM_MODEL: "unified-agent"
