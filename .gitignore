@@ -122,3 +122,4 @@ books/
 *.original.epub
 __pycache__/
 .env
+epub_errors*.json
