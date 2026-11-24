@@ -1,0 +1,39 @@
+name: Odin Docs Update
+
+on:
+  schedule:
+    - cron: "0 12 * * *"   # daily, 06:00 US Central (CST)
+  workflow_dispatch:
+
+jobs:
+  docs-update:
+    name: Odin Docs Agent
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout Ravens Suite
+        uses: actions/checkout@v4
+        with:
+          repository: ponder/ravens
+          path: .ravens
+          token: ${{ secrets.BOT_TOKEN || secrets.ODIN_BOT_TOKEN || secrets.FORGEJO_TOKEN || github.token }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Odin Docs Agent
+        env:
+          FORGEJO_URL: ${{ github.server_url }}
+          FORGEJO_REPOSITORY: ${{ github.repository }}
+          ODIN_BOT_TOKEN: ${{ secrets.BOT_TOKEN || secrets.ODIN_BOT_TOKEN || secrets.FORGEJO_TOKEN }}
+          LITELLM_API_URL: ${{ vars.LITELLM_API_URL || 'http://192.168.86.157:4000/v1' }}
+          LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+          LITELLM_MODEL: ${{ vars.LITELLM_MODEL || 'unified-coding' }}
+          BASE_BRANCH: main
+        run: python .ravens/scripts/docs_agent.py
