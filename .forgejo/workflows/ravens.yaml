@@ -61,6 +61,7 @@ jobs:
           LITELLM_API_URL: "http://192.168.86.157:4000/v1"
           LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
           LITELLM_MODEL: "unified-agent"
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           EVENT_NAME: ${{ github.event_name }}
           ACTOR: ${{ github.actor }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -133,6 +134,7 @@ jobs:
           LITELLM_API_URL: "http://192.168.86.157:4000/v1"
           LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
           LITELLM_MODEL: "unified-agent"
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           EVENT_NAME: ${{ github.event_name }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
